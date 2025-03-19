@@ -2,8 +2,8 @@
   <div class="p-4 m-8 w-80 bg-white shadow-md rounded-xl mx-auto mt-20">
     <picture class="rounded-lg block overflow-hidden relative group">
       <img
-        class="w-full transition-all duration-300 group-hover:scale-125 group-hover:blur-sm"
         ref="gambar"
+        class="w-full transition-all duration-300 group-hover:scale-125 group-hover:blur-sm"
         src="https://picsum.photos/360/240"
       />
       <div
@@ -14,6 +14,7 @@
           @change="handleFileChange"
           class="hidden"
           id="fileUpload"
+          accept="image/*"
         />
         <label
           for="fileUpload"
@@ -22,10 +23,12 @@
           Choose File
         </label>
         <button
+          type="submit"
           class="px-4 py-2 bg-transparent border border-white text-white rounded hover:bg-white/20 transition-colors"
-          @click="kirimGambar"
+          @click.stop="kirimGambar"
+          :disabled="isLoading"
         >
-          Kirim
+          {{ isLoading ? "Mengirim..." : "Kirim" }}
         </button>
       </div>
     </picture>
@@ -37,6 +40,11 @@
       aplikasi berbasis web menggunakan teknologi modern seperti Vue.js,
       Nuxt.js, dan Tailwind CSS.
     </p>
+
+    <p v-if="message" class="text-center text-sm mt-2 text-red-500">
+      {{ message }}
+    </p>
+
     <ul class="flex justify-evenly flex-row list-none mt-3 mb-0">
       <li class="bg-blue-500 hover:bg-blue-800 text-white px-4 py-2 rounded-lg">
         <a href="https://www.linkedin.com/in/abdulazizfirdaus">LinkedIn</a>
@@ -56,6 +64,8 @@ export default {
   data() {
     return {
       gambar: null,
+      isLoading: false,
+      message: "",
     };
   },
   methods: {
@@ -64,23 +74,47 @@ export default {
       this.previewGambar();
     },
     previewGambar() {
+      if (!this.gambar) return;
       const reader = new FileReader();
       reader.onload = (e) => {
         this.$refs.gambar.src = e.target.result;
       };
       reader.readAsDataURL(this.gambar);
     },
-    kirimGambar() {
+
+    async kirimGambar() {
+      if (!this.gambar) {
+        this.message = "Gambar harus diisi";
+        return;
+      }
+
+      this.isLoading = true;
+
       const formData = new FormData();
       formData.append("gambar", this.gambar);
-      this.$axios
-        .post("http://localhost:8000/api/upload-gambar", formData)
-        .then((response) => {
-          console.log(response.data);
-        })
-        .catch((error) => {
-          console.log(error);
+
+      try {
+        const response = await fetch("http://localhost:8000/api/upload", {
+          method: "POST",
+          body: formData,
+          headers: {
+            Accept: "application/json",
+          },
         });
+
+        if (!response.ok) {
+          throw new Error(`Error: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log(result);
+        this.message = result.message || "Gambar berhasil diupload";
+      } catch (error) {
+        console.error("Error uploading image", error);
+        this.message = "Gagal mengupload gambar";
+      } finally {
+        this.isLoading = false;
+      }
     },
   },
 };

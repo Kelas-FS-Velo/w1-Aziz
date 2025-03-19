@@ -7,23 +7,17 @@ use Illuminate\Http\Request;
 
 class ProfileController extends Controller
 {
-    public function uploadGambar(Request $request)
+    public function upload(Request $request)
     {
         $request->validate([
             'gambar' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
-        $gambar = $request->file('gambar');
-        $namaGambar = time() . '.' . $gambar->getClientOriginalExtension();
-        $gambar->move(public_path('images'), $namaGambar);
+        if ($request->file('image')) {
+            $path = $request->file('image')->store('uploads', 'public');
+            return response()->json(['path' => $path], 200);
+        }
 
-        $profile = Profile::find($request->id);
-        $profile->gambar = $namaGambar;
-        $profile->save();
-
-        return response()->json([
-            'message' => 'Gambar berhasil diupload',
-            'data' => $profile
-        ]);
+        return response()->json(['error' => 'Upload gagal'], 400);
     }
 }
