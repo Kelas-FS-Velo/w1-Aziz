@@ -41,7 +41,14 @@
       Nuxt.js, dan Tailwind CSS.
     </p>
 
-    <p v-if="message" class="text-center text-sm mt-2 text-red-500">
+    <p
+      v-if="message"
+      class="text-center text-sm mt-2"
+      :class="{
+        'text-green-500': messageType === 'success',
+        'text-red-500': messageType === 'error',
+      }"
+    >
       {{ message }}
     </p>
 
@@ -66,6 +73,7 @@ export default {
       gambar: null,
       isLoading: false,
       message: "",
+      messageType: "",
     };
   },
   methods: {
@@ -85,6 +93,7 @@ export default {
     async kirimGambar() {
       if (!this.gambar) {
         this.message = "Gambar harus diisi";
+        this.messageType = "error";
         return;
       }
 
@@ -109,9 +118,11 @@ export default {
         const result = await response.json();
         console.log(result);
         this.message = result.message || "Gambar berhasil diupload";
+        this.messageType = "success";
       } catch (error) {
         console.error("Error uploading image", error);
         this.message = "Gagal mengupload gambar";
+        this.messageType = "error";
       } finally {
         this.isLoading = false;
       }
